@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Message From Ash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0ece4;
+      --muted: rgba(240,236,228,0.45);
+      --accent: #c9a96e;
+      --accent-dim: rgba(201,169,110,0.15);
+      --error: #e07070;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow: hidden;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.6;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    .screen.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── Shared card ── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 7vw, 3rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 7vw, 2rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    h2 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+
+    /* ── Input ── */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 300;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus { border-color: var(--accent); }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0a;
+    }
+    .btn-primary:hover { background: #d4b47a; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+
+
+
+    /* ── Error ── */
+    .error-msg {
+      color: var(--error);
+      font-size: 0.8rem;
+      min-height: 1.2rem;
+      margin-bottom: 0.75rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .error-msg.show { opacity: 1; visibility: visible; }
+
+    /* ── Divider ── */
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--accent);
+      margin: 0 auto 2rem;
+      opacity: 0.5;
+    }
+
+    /* ── Question page specifics ── */
+    .question-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .question-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.4rem, 5vw, 1.9rem);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.4;
+      margin-bottom: 2rem;
+      color: var(--text);
+    }
+
+    /* ── Reveal screen ── */
+    #screen-reveal {
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+    }
+
+    .reveal-card {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .reveal-role-prompt {
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.75em;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .reveal-role {
+      font-size: clamp(2.2rem, 8vw, 3.5rem);
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      font-style: italic;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .reveal-name {
+      font-size: clamp(1.5rem, 8vw, 1.75rem);
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+    }
+
+    .reveal-photo {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      margin: 0 auto 1.5rem;
+      display: block;
+      background: var(--surface);
+    }
+
+    .reveal-photo-placeholder {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      margin: 0 auto 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .reveal-message {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.1rem, 4vw, 1.35rem);
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 2.5rem;
+      padding: 0 0.5rem;
+    }
+
+    .reveal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .btn-yes {
+      background: var(--accent);
+      color: #0a0a0a;
+      font-size: 1rem;
+      padding: 1.1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .btn-yes:hover { background: #d4b47a; transform: translateY(-1px); }
+
+    .btn-no {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: rgba(240,236,228,0.2);
+      font-size: 0.85rem;
+      padding: 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      position: relative;
+      transition: color 0.2s, border-color 0.2s;
+      user-select: none;
+    }
+    /* on desktop the button will flee via JS; on mobile just dim it */
+
+    /* ── Confirmation screen ── */
+    #screen-confirm .card {
+      text-align: center;
+    }
+    .confirm-big {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 300;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    .confirm-sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* ── Meme screen ── */
+    #screen-meme {
+      background: #000;
+    }
+    .meme-container {
+      text-align: center;
+    }
+    .meme-container img {
+      width: min(320px, 90vw);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .meme-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.25rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .meme-sub {
+      font-size: 1.25rem;
+      margin-top: 1rem;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .meme-sub-sad {
+      color: var(--muted);
+      font-size: 0.7rem;
+      margin-top: 4rem;
+    }
+
+    /* ── Confetti canvas ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Progress dots ── */
+    .progress {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .dot.done { background: var(--accent); }
+    .dot.active { background: var(--text); }
+
+    /* ── Shimmer on name after Q1 ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .screen.active .card > * {
+      animation: fadeUp 0.5s ease both;
+    }
+    .screen.active .card > *:nth-child(1) { animation-delay: 0.05s; }
+    .screen.active .card > *:nth-child(2) { animation-delay: 0.12s; }
+    .screen.active .card > *:nth-child(3) { animation-delay: 0.19s; }
+    .screen.active .card > *:nth-child(4) { animation-delay: 0.26s; }
+    .screen.active .card > *:nth-child(5) { animation-delay: 0.33s; }
+    .screen.active .card > *:nth-child(6) { animation-delay: 0.40s; }
+    .screen.active .card > *:nth-child(7) { animation-delay: 0.47s; }
+
+    /* Stagger for reveal card too */
+    .screen.active .reveal-card > * {
+      animation: fadeUp 0.5s ease both;
+    }
+    .screen.active .reveal-card > *:nth-child(1) { animation-delay: 0.05s; }
+    .screen.active .reveal-card > *:nth-child(2) { animation-delay: 0.12s; }
+    .screen.active .reveal-card > *:nth-child(3) { animation-delay: 0.19s; }
+    .screen.active .reveal-card > *:nth-child(4) { animation-delay: 0.26s; }
+    .screen.active .reveal-card > *:nth-child(5) { animation-delay: 0.33s; }
+    .screen.active .reveal-card > *:nth-child(6) { animation-delay: 0.40s; }
+    .screen.active .reveal-card > *:nth-child(7) { animation-delay: 0.47s; }
+    .screen.active .reveal-card > *:nth-child(8) { animation-delay: 0.54s; }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ═══════════════════════════════ SCREEN 0: PASSWORD ═══════════════════════════════ -->
+<div class="screen active" id="screen-password">
+  <div class="card">
+    <div class="eyebrow">Welcome, brother.</div>
+    <h1>You've been summoned.</h1>
+    <div class="divider"></div>
+    <p class="subtitle">But, first...<br/>Prove you're supposed to be here.</p>
+    <div class="input-wrap">
+      <input type="password" id="password-input" placeholder="enter the password" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" onclick="checkPassword()">Let me in</button>
+    <div class="error-msg" id="password-error" style="margin-top:0.75rem; margin-bottom:0;">nice try. not quite.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 1: NAME ═══════════════════════════════ -->
+<div class="screen" id="screen-name">
+  <div class="card">
+    <div class="eyebrow">i'm glad you can spell</div>
+    <h1>Enter thy<br/><em>name.</em></h1>
+    <div class="divider"></div>
+    <p class="subtitle">First and last. e.g. "John Smith"</p>
+    <div class="input-wrap">
+      <input type="text" id="name-input" placeholder="your name" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" onclick="checkName()">Continue</button>
+    <div class="error-msg" id="name-error" style="margin-top:0.75rem; margin-bottom:0;">hmm, don't think you're supposed to be here 👀</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 2: QUESTION 1 ═══════════════════════════════ -->
+<div class="screen" id="screen-q1">
+  <div class="card">
+    <div class="progress">
+      <div class="dot active" id="dot1-1"></div>
+      <div class="dot" id="dot1-2"></div>
+    </div>
+    <div class="eyebrow" id="q1-eyebrow">Question 1 of 2</div>
+    <p class="question-text" id="q1-text"></p>
+    <div class="input-wrap">
+      <input type="text" id="q1-input" placeholder="your answer" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" onclick="checkQ1()">Submit</button>
+    <div class="error-msg" id="q1-error" style="margin-top:0.75rem; margin-bottom:0;">not quite, big brain 🤔</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 3: QUESTION 2 ═══════════════════════════════ -->
+<div class="screen" id="screen-q2">
+  <div class="card">
+    <div class="progress">
+      <div class="dot done" id="dot2-1"></div>
+      <div class="dot active" id="dot2-2"></div>
+    </div>
+    <div class="eyebrow">Question 2 of 2</div>
+    <p class="question-text" id="q2-text"></p>
+    <div class="input-wrap">
+      <input type="text" id="q2-input" placeholder="your answer" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" onclick="checkQ2()">Submit</button>
+    <div class="error-msg" id="q2-error" style="margin-top:0.75rem; margin-bottom:0;">you're killing me. try again 💀</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 4: REVEAL ═══════════════════════════════ -->
+<div class="screen" id="screen-reveal">
+  <div class="reveal-card">
+    <!-- PHOTO PLACEHOLDER — swap the div below with an <img> tag once you have photos -->
+    <!-- Example: <img src="photos/yashas.jpg" class="reveal-photo" alt="Ash + Yashas" /> -->
+    <div class="reveal-photo-placeholder" id="reveal-photo">
+      <!-- PHOTO: Ash + [name] -->
+      📸 photo goes here
+    </div>
+
+    <div class="reveal-name" id="reveal-name"></div>
+    <div class="reveal-role-prompt" id="reveal-role-prompt"></div>
+    <div class="reveal-role" id="reveal-role"></div>
+
+    <p class="reveal-message" id="reveal-message"></p>
+
+    <div class="reveal-buttons">
+      <button class="btn-yes" onclick="handleYes()">Hell yes 🔥</button>
+      <button class="btn-no" id="btn-no" onclick="handleNo()">No</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 5: CONFIRM ═══════════════════════════════ -->
+<div class="screen" id="screen-confirm">
+  <div class="meme-container">
+    <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYjQ4bDVzMm1nMHk1ZTJxOWVrenQ0MHQ1OGY3OHhkZ25lZnA3M3JkdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/IcGkqdUmYLFGE/giphy.gif"/>
+  </div>
+  <div class="card">
+    <div class="eyebrow">See you at the altar.</div>
+    <h1>Let's get it.</h1>
+    <h2><em>Thanks for being<br/>a part of this.</em></h2>
+    <div class="divider"></div>
+    <p class="confirm-sub">Shoot me a text confirming you got here!<br/>More details coming soon.</p>
+    <p style="margin-top: 2rem;">
+      <span onclick="goTo('screen-reveal')" style="color: var(--muted); font-size: 0.8rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;">← back to your BROposal</span>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 6: MEME (NO button) ═══════════════════════════════ -->
+<div class="screen" id="screen-meme">
+  <div class="meme-container">
+    <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMm9oMno2MjU5MHA4Y2s2NHlydjY5czVneXNhN29mdjlnd3M0MWo1dyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xL7PDV9frcudO/giphy.gif" alt="bro what" />
+    <div class="meme-text">Bro,<br/>what the fuck.</div>
+    <div class="meme-sub" onclick="goBack()">← jk take me back</div>
+    <p class="meme-sub-sad">In the off chance this was genuine, send me a text if you want to chat</p>
+  </div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════
+  // DATA
+  // ═══════════════════════════════════════════════════════
+  const groomsmen = {
+    "test name": {
+      role: "Testing",
+      photoAlt: "Ash + Yashas",
+      questions: [
+        { q: "This is a test?", a: ["test"] },
+        { q: "This is another test?", a: ["test"] }
+      ],
+      reveal: "This is a very long message that doesn't say much but will be used to test the sizing for about 5 sentences. This is a very long message that doesn't say much but will be used to test the sizing for about 5 sentences. This is a very long message that doesn't say much but will be used to test the sizing for about 5 sentences. This is a very long message that doesn't say much but will be used to test the sizing for about 5 sentences. This is a very long message that doesn't say much but will be used to test the sizing for about 5 sentences."
+    },
+    "yashas rao": {
+      role: "Best Man",
+      photoAlt: "Ash + Yashas",
+      photo: "photos/yashas.jpg",
+      questions: [
+        { q: "What did you throw over the wall of my dad's backyard because I was taking too long to eat it?", a: ["kfc chicken", "chicken", "wing", "breast"] },
+        { q: "What was the last thing you gave me on my 21st birthday that ended the night real quick?", a: ["fireball"] }
+      ],
+      reveal: "It's always been Ash and Yash since day one. From pretending to be locked out of my house so we could hang out after school to flying out for my 30th birthday, you've always been there for me when it mattered most. We may have had some gaps of not seeing each other for a bit, but the thing I always appreciated the most is that the friendship never felt different. You truly are and have been the most consistent person in my life and you bring nothing less than your best. I need you up there with me, brother. Will you be my best man?"
+    },
+    "adithya rao": {
+      role: "Groomsman",
+      photoAlt: "Ash + Adithya",
+      photo: "photos/adithya.jpg",
+      questions: [
+        { q: "When is my birthday? (month / day)", a: ["july 1", "july 1st", "7/1"] },
+        { q: "What did you almost hit me in the head with?", a: ["controller", "playstation controller"] }
+      ],
+      reveal: "Adithya. Same birthday - hope you liked that one lol my favorite memory will always be us two plotting what to get each other for our birthday and still being just as excited when we opened it up. I don't think we knew it then, but looking back, it just confirmed that we could rely on each other. It's an incredibly special thing to see how you introduce me as your 'other brother' without hesitation. It wouldn't be right without you in my official groomsmen lineup, so...will you join me up there?"
+    },
+    "amar chatterjee": {
+      role: "Groomsman",
+      photoAlt: "Ash + Amar",
+      photo: "photos/amar.jpg",
+      questions: [
+        { q: "What did Dad say after taking the loudest bite of pizza crust in recorded human history?", a: ["its not crunchy", "it's not crunchy", "not crunchy", "that's not crunchy"] },
+        { q: "What song did we record ourselves singing together? (hint: oakleaf house)", a: ["bring me to life"] }
+      ],
+      reveal: "Amar. You're my brother and the most consistent part of our relationship is the fact that you always aim to protect me. Throughout our childhood and into adulthood, you've shielded me from a lot and have truly had my best interest at heart. I have always looked up to you and I always will. I'm genuinely excited to be able to ask you: Will you join me up on the altar and be there as my groomsman?"
+    },
+    "sid kundu": {
+      role: "Groomsman",
+      photoAlt: "Ash + Sid",
+      photo: "photos/sid.jpg",
+      questions: [
+        { q: "What's the latest game we've played together in the name of democracy?", a: ["helldivers", "helldivers 2"] },
+        { q: "What did you give me when you graduated from UCSD? (hint: wheels)", a: ["longboard", "skateboard"] }
+      ],
+      reveal: "Sid, I've known you since some of my earliest memories honestly. Calling you and Mohini step siblings always felt super weird and it's because you always kept the rest 3 of us at the top of your priority list. Sometimes I'm not sure you even realize just how protective you are of us, even though you do aim to annoy us as well lol that being said, I'd love it if you joined me up on the altar and stood by me as my eldest brother. Will you be my groomsman?"
+    },
+    "pavan patel": {
+      role: "Groomsman",
+      photoAlt: "Ash + Pavan",
+      photo: "photos/pavan.jpg",
+      questions: [
+        { q: "What's the dairy in Pleasanton?", a: ["meadowlark", "meadowlark dairy"] },
+        { q: "Enter new text message...", a: ["sup"] }
+      ],
+      reveal: "Pavan. We have a lot of shared interests despite being very different people, and I really look up to you for that. You never once treated me like anything other than a younger brother, and I felt that from day one. Covid gave us some of the best routines: Starbucks runs, Meadowlark dairy, just existing in the same space. At your wedding, I meant every word I said — it's felt like you've been my brother long before you married Mohini. And hopefully at the bach, we can keep the 'he didn't make it' story in the past exactly where it belongs. Will you be my groomsman?"
+    },
+    "jason mancini": {
+      role: "Groomsman",
+      photoAlt: "Ash + Jason",
+      photo: "photos/jason.jpg",
+      questions: [
+        { q: "What does Dia call blueberries?", a: ["boobellis", "boobelli"] },
+        { q: "Finish the sentence: having you as a future BIL will make my life _____ fun!", a: ["waymo"] }
+      ],
+      reveal: "Jason. Before we ever met in person, you helped me troubleshoot my PC build until we finally got it working. That was my first core memory with you, and it set the tone for everything after. You welcomed me into your family before I even had a reason to ask, and you hosted me in Montreal when I came to ask for your family's blessing. When Sarah asked me who I wanted as my groomsmen, I didn't hesitate: 'He may be your brother, but I want Jason.' And I'll tell you, Dia screaming 'AAAASSSHHH' when she sees me on FaceTime is genuinely top 3 favorite things in my life right now. Will you be my groomsman?"
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════════════
+  let currentPerson = null;
+  let currentScreen = 'screen-password';
+
+  // ═══════════════════════════════════════════════════════
+  // NAVIGATION
+  // ═══════════════════════════════════════════════════════
+  function goTo(id) {
+    document.getElementById(currentScreen).classList.remove('active');
+    const next = document.getElementById(id);
+    next.classList.add('active');
+    currentScreen = id;
+    // scroll reveal to top each time
+    if (id === 'screen-reveal') next.scrollTop = 0;
+  }
+
+  function goBack() {
+    goTo('screen-reveal');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ENTER KEY SUPPORT
+  // ═══════════════════════════════════════════════════════
+  document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+  document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkName(); });
+  document.getElementById('q1-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkQ1(); });
+  document.getElementById('q2-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkQ2(); });
+
+  // ═══════════════════════════════════════════════════════
+  // SCREEN 0 — PASSWORD
+  // ═══════════════════════════════════════════════════════
+  function checkPassword() {
+    const val = document.getElementById('password-input').value.trim().toLowerCase();
+    const err = document.getElementById('password-error');
+    if (val === 'parmy') {
+      err.classList.remove('show');
+      goTo('screen-name');
+      setTimeout(() => document.getElementById('name-input').focus(), 650);
+    } else {
+      err.classList.add('show');
+      document.getElementById('password-input').value = '';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SCREEN 1 — NAME
+  // ═══════════════════════════════════════════════════════
+  function checkName() {
+    const val = document.getElementById('name-input').value.trim().toLowerCase();
+    const err = document.getElementById('name-error');
+    if (groomsmen[val]) {
+      err.classList.remove('show');
+      currentPerson = val;
+      goTo('screen-q1');
+      document.getElementById('q1-text').textContent = groomsmen[val].questions[0].q;
+      setTimeout(() => document.getElementById('q1-input').focus(), 650);
+    } else {
+      err.classList.add('show');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SCREEN 2 — Q1
+  // ═══════════════════════════════════════════════════════
+  function checkQ1() {
+    const val = document.getElementById('q1-input').value.trim().toLowerCase();
+    const err = document.getElementById('q1-error');
+    const accepted = groomsmen[currentPerson].questions[0].a;
+    if (accepted.some(a => val.includes(a) || a.includes(val) && val.length > 2)) {
+      err.classList.remove('show');
+      goTo('screen-q2');
+      document.getElementById('q2-text').textContent = groomsmen[currentPerson].questions[1].q;
+      setTimeout(() => document.getElementById('q2-input').focus(), 650);
+    } else {
+      err.classList.add('show');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SCREEN 3 — Q2
+  // ═══════════════════════════════════════════════════════
+  function checkQ2() {
+    const val = document.getElementById('q2-input').value.trim().toLowerCase();
+    const err = document.getElementById('q2-error');
+    const accepted = groomsmen[currentPerson].questions[1].a;
+    if (accepted.some(a => val.includes(a) || a.includes(val) && val.length > 2)) {
+      err.classList.remove('show');
+      populateReveal();
+      goTo('screen-reveal');
+    } else {
+      err.classList.add('show');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // POPULATE REVEAL
+  // ═══════════════════════════════════════════════════════
+  function populateReveal() {
+    const p = groomsmen[currentPerson];
+    const displayName = currentPerson.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+    const prompt = "Will you be my";
+    const role = p.role + '?';
+    document.getElementById('reveal-role-prompt').textContent = prompt;
+    document.getElementById('reveal-role').textContent = role;
+    document.getElementById('reveal-name').textContent = displayName;
+    document.getElementById('reveal-message').textContent = p.reveal;
+    // Update photo
+    const photoEl = document.getElementById('reveal-photo');
+    photoEl.outerHTML = `<img src="${p.photo}" class="reveal-photo" alt="${p.photoAlt}" id="reveal-photo" />`;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // REVEAL BUTTONS
+  // ═══════════════════════════════════════════════════════
+  function handleYes() {
+    goTo('screen-confirm');
+    launchConfetti();
+  }
+
+  function handleNo() {
+    goTo('screen-meme');
+  }
+
+
+
+  // ═══════════════════════════════════════════════════════
+  // CONFETTI
+  // ═══════════════════════════════════════════════════════
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = [];
+    const colors = ['#c9a96e', '#f0ece4', '#e07070', '#7ec8a4', '#7eb8e0'];
+    for (let i = 0; i < 140; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: -10 - Math.random() * 200,
+        w: 6 + Math.random() * 8,
+        h: 4 + Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2 + Math.random() * 4,
+        vr: (Math.random() - 0.5) * 0.15
+      });
+    }
+
+    let frame;
+    let elapsed = 0;
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, 1 - elapsed / 240);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      elapsed++;
+      if (elapsed < 280) frame = requestAnimationFrame(animate);
+      else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    }
+    animate();
+  }
+</script>
+</body>
+</html>
